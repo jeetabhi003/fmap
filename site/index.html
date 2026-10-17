@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worli Property Guide</title>
+<meta name="description" content="Free checklist and verified project data for buying in Worli. Check RERA before you pay.">
+<style>
+  :root {
+    --bg: #fafaf7;
+    --fg: #1d1d1b;
+    --muted: #5d5d58;
+    --accent: #1f5f4a;
+    --card: #ffffff;
+    --line: #e2e2dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161614;
+      --fg: #ecece6;
+      --muted: #a4a49c;
+      --accent: #7fc4a8;
+      --card: #1f1f1c;
+      --line: #33332f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161614;
+    --fg: #ecece6;
+    --muted: #a4a49c;
+    --accent: #7fc4a8;
+    --card: #1f1f1c;
+    --line: #33332f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 12px; }
+  h2 { font-size: 1.25rem; margin: 32px 0 8px; }
+  p { margin: 0 0 12px; color: var(--muted); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+  }
+  ul { padding-left: 20px; color: var(--muted); }
+  .btn {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .note { font-size: 0.9rem; }
+  footer { margin-top: 48px; font-size: 0.85rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Buying in Worli? Check these before you pay a deposit.</h1>
+  <p>A free checklist, and project data where every price and RERA number has a source and a date.</p>
+
+  <div class="card">
+    <h2>Get the free checklist</h2>
+    <p>Tell us your segment and we will send the checklist and a short email sequence. You can unsubscribe at any time.</p>
+    <!-- Replace FORM_ID with the Google Form that writes to the lead sheet (see data/leads/README.md). -->
+    <p><a class="btn" href="https://docs.google.com/forms/d/e/FORM_ID/viewform">Get the checklist</a></p>
+    <p class="note">We store your name, email and segment only. Details are in our privacy note.</p>
+  </div>
+
+  <h2>Who this is for</h2>
+  <ul>
+    <li><strong>Buying a home to live in:</strong> ready-possession checks, OC, and price per sq ft.</li>
+    <li><strong>Investing to rent or resell:</strong> registered vs. asking price, developer checks, and possession risk.</li>
+    <li><strong>Looking for a sea-facing home in a small project:</strong> developer and registry checks.</li>
+  </ul>
+
+  <h2>What we do not do</h2>
+  <p>We do not predict returns and we do not call any project the best. Projects marked "price on request" have no verified price yet.</p>
+
+  <footer>
+    Research, not advice. Verify each project on MahaRERA before you pay. Property sales are handled by a licensed agent. Agent registration number: <em>to be added</em>.
+  </footer>
+</main>
+</body>
+</html>

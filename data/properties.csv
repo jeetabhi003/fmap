@@ -1,0 +1,20 @@
+id,project,locality,rera_id,developer,status,price_cr_range,price_verified,shortlist,open_items
+1,Lodha Adrina (Lodha Park Tower 6 Adrina),Naka,P51900014937,Macrotech Developers (listed),Ready,6.42-18,yes,End user,Verify OC on MahaRERA
+2,Godrej Trilogy,Naka,see ledger,Godrej Properties (listed),Under construction,13.8-24.62,yes,Investor,Complaint count; RERA ID to confirm in ledger
+3,Kalpataru One Wing A,Naka,P51900055246,Kalpataru Ltd (listed Jul 2025),Under construction,unknown,no,Investor,Price sources disagree; locality disputed (Worli Naka vs Lower Parel)
+4,Runwal Raaya,Naka,P51900080218 / P51900080252,Runwal Realty (not listed Runwal Enterprises),Under construction,8.69-31.73,yes,Investor,Developer not listed; locality address conflict
+5,JP Altus,Naka,P51900012374 (filed as Ahuja Altus),JP Infra with Ahuja Constructions,unknown,7.92-10.17,no,None,Status unknown; neither firm listed
+6,Birla Niyaara,Sea Face,see ledger,Birla Estates (listed parent),Under construction,28.25-53.63,yes,Investor,Complaint count
+7,Sugee Marina Bay (Saumya Marina Bay Worli Sea Face),Sea Face,P51900011592,Sugee,Ready,unknown,no,End user,Price unknown
+8,Godrej Trilogy Seafront,Sea Face,see ledger,Godrej Properties (listed),Under construction,16.61-24.3,yes,Investor,Same development as Godrej Trilogy (Naka)
+9,Prestige Nautilus,Sea Face,P51900009720,Prestige Estates (listed),Under construction,28.18-87.73,yes,Investor,RERA ID conflicts with HBS Tower in one source
+10,Lodha Sea Face,Sea Face,P51900053592,Macrotech Developers (listed),Under construction,unknown,no,Legacy,29 units; registered sales ranged Rs131-187 Cr across sources
+11,Sugee Sea Krest,Sea Face,P51900051903,Sugee Developers,Under construction,unknown,no,None,RERA date conflict (Dec 2027 vs Jun 2029); price sources disagree
+12,Goshar The Legacy,Sea Face,P51900045797 (identity unconfirmed),unknown,unknown,unknown,no,None,Identity check needed before any public use
+13,Kabra Dvayam,Sea Face,P51900078546,Kabra Group,Under construction,17.0-20.16,no,None,Price sources disagree; tier decision pending
+14,Embassy Citadel,Worli Naka,see ledger,Embassy Developments Ltd (NSE: EMBDL),Under construction,13.04-39.47,yes,Investor,Edition membership to confirm
+15,Harbour Marquee,Sea Face,see ledger,unknown,unknown,unknown,no,None,Developer and price unknown
+16,D and A The Imperial Worli,Sea Face,see ledger,unknown,unknown,unknown,no,None,Developer and price unknown
+17,HBS Marineview,Marine Lines (not Worli),P51900009287,HBS Seaview Pvt Ltd,Conflict,unknown,no,None,Not in Worli; status conflict; raise edition membership
+18,Chandak Cornerstone,Adarsh Nagar,P51900005370,Chandak Group,Ready,2.43-3.82,no,End user,Price sources differ; locality map check pending
+19,Techno Aakasa,Adarsh Nagar,P51900050463,Techno Freshworld LLP,Under construction,8.17-11.70,no,None,Address conflict; floor count conflict; RERA date 31 Dec 2027
