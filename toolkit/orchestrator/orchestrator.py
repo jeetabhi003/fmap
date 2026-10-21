@@ -1,214 +1,162 @@
 """One orchestrator for the whole project.
 
-It is the only entry point. It runs every job in pipeline.json in order,
-skips jobs whose dependencies are not ok, saves the result of each run,
-and writes docs/strategy/status.md.
+It is the only entry point. It runs every department in pipeline.json in order.
+Each department does its work, verifies it, and saves it; only verified output
+is promoted for the departments after it.
 
-Job statuses:
-  ok       done and healthy
-  pending  not started yet; nothing is wrong
+Statuses:
+  ok       done, verified, saved
+  pending  nothing to do yet; not an error
   blocked  needs an input only a person can provide
-  waiting  a dependency is not ok, so the job was skipped
-  failed   the repo has a problem to fix
+  waiting  a department it depends on is not ok, so it was skipped
+  failed   verification failed or the department crashed; draft kept in work/
 
-Exit code is 1 only when a job failed. Blocked and pending do not fail the run.
+Exit code is 1 only when a department failed.
 
 Usage:
-  python3 toolkit/orchestrator/orchestrator.py run
+  python3 toolkit/orchestrator/orchestrator.py run [--only NAME ...] [--run-engine]
   python3 toolkit/orchestrator/orchestrator.py status
   python3 toolkit/orchestrator/orchestrator.py list
+  python3 toolkit/orchestrator/orchestrator.py match --segment investor [--budget-cr 30]
 """
 
 import argparse
-import csv
 import json
-import re
 import sys
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from core import Context, Result, read_csv_rows, run_department  # noqa: E402
+from departments import DEPARTMENTS  # noqa: E402
+from departments.matching import SEGMENT_LABELS, match  # noqa: E402
+
 PIPELINE = Path(__file__).with_name("pipeline.json")
-STATE = ROOT / "data" / "jobs" / "state.json"
-REPORT = ROOT / "docs" / "strategy" / "status.md"
-
-sys.path.insert(0, str(ROOT / "scripts"))
-import validate_register  # noqa: E402
-
-SITE_PLACEHOLDERS = {
-    "FORM_ID": "Google Form link",
-    "to be added": "agent registration number",
-}
-
-
-def job_research_input(cfg):
-    folder = ROOT / "data" / "inputs" / "research"
-    files = [p for p in folder.glob("*") if p.is_file() and p.name != "README.md"]
-    if not files:
-        return "blocked", "no research document in data/inputs/research/"
-    return "ok", f"{len(files)} file(s): " + ", ".join(p.name for p in files)
-
-
-def job_validate_register(cfg):
-    with validate_register.PATH.open(newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    errors = validate_register.check(rows)
-    if errors:
-        return "failed", f"{len(errors)} register error(s): " + "; ".join(errors[:3])
-    verified = sum(r["price_verified"] == "yes" for r in rows)
-    return "ok", (
-        f"{len(rows)} projects, {verified} with a verified price "
-        "(source is the Worli knowledge base, not yet confirmed as the research document)"
-    )
-
-
-def job_site_placeholders(cfg):
-    html = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
-    missing = [label for token, label in SITE_PLACEHOLDERS.items() if token in html]
-    if missing:
-        return "blocked", "not set in site/index.html: " + ", ".join(missing)
-    return "ok", "no placeholders left"
-
-
-def job_ebook_outlines(cfg):
-    files = sorted((ROOT / "products" / "ebooks").glob("*.md"))
-    if not files:
-        return "failed", "no ebook outlines in products/ebooks/"
-    thin = [
-        f.name
-        for f in files
-        if len(re.findall(r"^\d+\. ", f.read_text(encoding="utf-8"), re.M)) < 5
-    ]
-    if thin:
-        return "failed", "fewer than 5 outline sections: " + ", ".join(thin)
-    return "ok", f"{len(files)} outlines, each with 5+ sections"
-
-
-def job_lead_summary(cfg):
-    path = ROOT / "data" / "leads" / "export.csv"
-    if not path.exists():
-        return "pending", "no local export; leads stay in Google Sheets"
-    with path.open(newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    # Counts only. Names and emails are never printed or written to the report.
-    by_segment = Counter(r.get("segment", "unknown") for r in rows)
-    summary = ", ".join(f"{k}={v}" for k, v in sorted(by_segment.items()))
-    return "ok", f"{len(rows)} leads ({summary})"
-
-
-def job_shortlist_ready(cfg):
-    path = ROOT / "data" / "properties.csv"
-    with path.open(newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    ready = [r for r in rows if r["shortlist"] != "None" and r["price_verified"] == "yes"]
-    if not ready:
-        return "pending", "no shortlisted project has a verified price yet"
-    return "ok", f"{len(ready)} shortlisted project(s) with a verified price"
-
-
-def job_ebook_drafts(cfg):
-    folder = ROOT / "products" / "ebooks" / "drafts"
-    drafts = sorted(folder.glob("*.md")) if folder.exists() else []
-    if not drafts:
-        return "pending", "no full drafts yet (products/ebooks/drafts/)"
-    return "ok", f"{len(drafts)} full draft(s)"
-
-
-JOBS = {
-    "research_input": job_research_input,
-    "validate_register": job_validate_register,
-    "site_placeholders": job_site_placeholders,
-    "ebook_outlines": job_ebook_outlines,
-    "lead_summary": job_lead_summary,
-    "shortlist_ready": job_shortlist_ready,
-    "ebook_drafts": job_ebook_drafts,
-}
 
 
 def load_pipeline():
-    cfg = json.loads(PIPELINE.read_text(encoding="utf-8"))
+    steps = json.loads(PIPELINE.read_text(encoding="utf-8"))["departments"]
     seen = set()
-    for job in cfg["jobs"]:
-        if job["name"] not in JOBS:
-            raise SystemExit(f"pipeline.json names unknown job: {job['name']}")
-        missing = [d for d in job["depends_on"] if d not in seen]
-        if missing:
-            raise SystemExit(f"{job['name']} depends on {missing}, which must come earlier")
-        seen.add(job["name"])
-    return cfg
+    for step in steps:
+        if step["name"] not in DEPARTMENTS:
+            raise SystemExit(f"pipeline.json names unknown department: {step['name']}")
+        later = [d for d in step["depends_on"] + step["uses"] if d not in seen]
+        if later:
+            raise SystemExit(f"{step['name']} needs {later}, which must come earlier in pipeline.json")
+        seen.add(step["name"])
+    return steps
 
 
-def run():
-    cfg = load_pipeline()
-    results = {}
-    for job in cfg["jobs"]:
-        name = job["name"]
-        open_deps = [d for d in job["depends_on"] if results[d]["status"] != "ok"]
+def select(steps, only):
+    """The named departments plus everything they depend on, in pipeline order."""
+    if not only:
+        return steps
+    unknown = [n for n in only if n not in DEPARTMENTS]
+    if unknown:
+        raise SystemExit(f"unknown department(s): {unknown}")
+    by_name = {s["name"]: s for s in steps}
+    needed, stack = set(), list(only)
+    while stack:
+        name = stack.pop()
+        if name not in needed:
+            needed.add(name)
+            stack.extend(by_name[name]["depends_on"])
+    return [s for s in steps if s["name"] in needed]
+
+
+def run(ctx, only=None):
+    for step in select(load_pipeline(), only):
+        name = step["name"]
+        ctx.outputs[name] = ctx.path(step["output"])
+        open_deps = [d for d in step["depends_on"] if ctx.results[d].status != "ok"]
         if open_deps:
-            results[name] = {"status": "waiting", "message": "waiting on " + ", ".join(open_deps)}
+            result = Result("waiting", "waiting on " + ", ".join(open_deps))
         else:
-            status, message = JOBS[name](cfg)
-            results[name] = {"status": status, "message": message}
+            result = run_department(DEPARTMENTS[name], ctx, ctx.outputs[name], ctx.path("work", name))
+        ctx.results[name] = result
+        print(f"{name:<11} {result.status:<8} {result.message}", flush=True)
 
-    saved = {"last_run": datetime.now(timezone.utc).isoformat(timespec="seconds"), "jobs": results}
-    STATE.parent.mkdir(parents=True, exist_ok=True)
-    STATE.write_text(json.dumps(saved, indent=2), encoding="utf-8")
-    write_report(saved)
-    print_table(results)
-    return 1 if any(r["status"] == "failed" for r in results.values()) else 0
-
-
-def print_table(results):
-    width = max(len(n) for n in results)
-    for name, r in results.items():
-        print(f"{name:<{width}}  {r['status']:<8}  {r['message']}")
+    jobs = {n: {"status": r.status, "message": r.message, "files": r.files} for n, r in ctx.results.items()}
+    state = {"last_run": datetime.now(timezone.utc).isoformat(timespec="seconds"), "departments": jobs}
+    state_path = ctx.path("data", "jobs", "state.json")
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+    write_report(ctx, jobs)
+    return 1 if any(r.status == "failed" for r in ctx.results.values()) else 0
 
 
-def write_report(saved):
-    lines = [
-        "# Project status",
-        "",
-        f"Last run: {saved['last_run']} (generated by `toolkit/orchestrator/orchestrator.py`)",
-        "",
-        "| Job | Status | Detail |",
-        "|---|---|---|",
-    ]
-    for name, r in saved["jobs"].items():
-        lines.append(f"| {name} | {r['status']} | {r['message']} |")
-    blocked = [n for n, r in saved["jobs"].items() if r["status"] == "blocked"]
-    lines += ["", "## Needs a person", ""]
-    lines += [f"- {n}: {saved['jobs'][n]['message']}" for n in blocked] or ["Nothing blocked."]
-    REPORT.parent.mkdir(parents=True, exist_ok=True)
-    REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+def write_report(ctx, jobs):
+    lines = ["# Pipeline status", "", "| Department | Status | Detail |", "|---|---|---|"]
+    lines += [f"| {n} | {j['status']} | {j['message']} |" for n, j in jobs.items()]
+    for title, status in (("Needs a person", "blocked"), ("Failed", "failed")):
+        items = [f"- {n}: {j['message']}" for n, j in jobs.items() if j["status"] == status]
+        lines += ["", f"## {title}", ""] + (items or ["Nothing."])
+    report = ctx.path("outputs", "report", "status.md")
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def status():
-    if not STATE.exists():
+def status(ctx):
+    path = ctx.path("data", "jobs", "state.json")
+    if not path.exists():
         print("No run yet. Run: python3 toolkit/orchestrator/orchestrator.py run")
         return 0
-    saved = json.loads(STATE.read_text(encoding="utf-8"))
-    print(f"Last run: {saved['last_run']}")
-    print_table(saved["jobs"])
+    state = json.loads(path.read_text(encoding="utf-8"))
+    print(f"Last run: {state['last_run']}")
+    for name, job in state["departments"].items():
+        print(f"{name:<11} {job['status']:<8} {job['message']}")
     return 0
 
 
-def list_jobs():
-    for job in load_pipeline()["jobs"]:
-        deps = ", ".join(job["depends_on"]) or "none"
-        print(f"{job['name']:<20} depends on: {deps}")
+def list_departments():
+    for step in load_pipeline():
+        print(f"{step['name']:<11} depends on: {', '.join(step['depends_on']) or 'none':<22} "
+              f"uses: {', '.join(step['uses']) or 'none':<22} saves to: {step['output']}")
+    return 0
+
+
+def match_command(ctx, segment, budget_cr):
+    _, rows = read_csv_rows(ctx.path("data", "properties.csv"))
+    result = match(rows, segment, budget_cr)
+    budget = f" within ₹{budget_cr} Cr" if budget_cr is not None else ""
+    print(f"Segment: {SEGMENT_LABELS[segment]}{budget}. Facts as of {ctx.config.get('data_as_of', '')}.")
+    if not ctx.config.get("research_confirmed"):
+        print("Note: the register is not yet confirmed as the research document.")
+    for title, key in (("Matched (verified price)", "matched"), ("Price not verified: check first", "to_check"),
+                       ("Over budget", "over_budget")):
+        print(f"\n{title}:")
+        for e in result[key] or [{"project": "none"}]:
+            if e["project"] == "none":
+                print("  none")
+                continue
+            print(f"  {e['project']} | MahaRERA {e['rera_id']} | {e['status']} | ₹{e['price_cr_range']} Cr")
+            print(f"    still to check: {e['caveats']}")
+    print("\nResearch, not advice. Verify on MahaRERA before you pay.")
     return 0
 
 
 def main():
     parser = argparse.ArgumentParser(description="Run the project pipeline.")
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("run", help="run every job in order")
+    run_p = sub.add_parser("run", help="run the departments in order")
+    run_p.add_argument("--only", nargs="+", metavar="NAME", help="run these departments and what they depend on")
+    run_p.add_argument("--run-engine", action="store_true", help="also run the laptop research engine (takes hours)")
     sub.add_parser("status", help="show the last run")
-    sub.add_parser("list", help="list jobs and dependencies")
+    sub.add_parser("list", help="list departments and dependencies")
+    match_p = sub.add_parser("match", help="shortlist projects for a buyer")
+    match_p.add_argument("--segment", required=True, choices=sorted(SEGMENT_LABELS))
+    match_p.add_argument("--budget-cr", type=float)
     args = parser.parse_args()
-    handlers = {"run": run, "status": status, "list": list_jobs}
-    return handlers[args.command]()
+
+    ctx = Context(options={"run_engine": getattr(args, "run_engine", False)})
+    if args.command == "run":
+        return run(ctx, args.only)
+    if args.command == "status":
+        return status(ctx)
+    if args.command == "list":
+        return list_departments()
+    return match_command(ctx, args.segment, args.budget_cr)
 
 
 if __name__ == "__main__":

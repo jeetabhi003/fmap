@@ -1,0 +1,2 @@
+listing_id,project,locality,rera_id,configuration,carpet_sqft,price_text,source_name,source_url,retrieved_on,media_url,media_rights,notes
+L001,Example Project,Worli,P51900000000,3 BHK,1250,Rs 9.5 Cr,Example portal,https://example.com/listing/123,2026-10-21,,none,Delete this row; one row per listing. media_rights: own | licensed | written_permission | none

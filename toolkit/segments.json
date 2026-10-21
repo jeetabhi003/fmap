@@ -1,0 +1,53 @@
+[
+  {
+    "key": "end_user",
+    "label": "End user",
+    "slug": "end-user",
+    "title": "Buying a home to live in",
+    "nav": "Buy to live",
+    "blurb": "Possession, occupancy certificate and price checks for a home you will live in.",
+    "headline": "Buying a home in Worli to live in? Check these before you pay a deposit.",
+    "intro": "Possession dates slip, prices vary across sources, and a ready home without an occupancy certificate is a risk. Start with the checks below.",
+    "worries": [
+      "Will I get possession on the date promised?",
+      "Is the asking price close to what flats actually registered for?",
+      "Does the building have an occupancy certificate?"
+    ],
+    "ebook_file": "products/ebooks/01-worli-buyer-checklist.md",
+    "ebook_title": "Worli Buyer's Checklist"
+  },
+  {
+    "key": "investor",
+    "label": "Investor",
+    "slug": "investor",
+    "title": "Investing to rent or resell",
+    "nav": "Invest",
+    "blurb": "Asking vs. registered prices, developer record and possession risk.",
+    "headline": "Investing in Worli? Read the project before you read the brochure.",
+    "intro": "Compare asking and registered prices, check the developer, and know the possession risk. Our guide shows how to verify each one.",
+    "worries": [
+      "How big is the gap between asking and registered prices?",
+      "How reliable is the developer's delivery record?",
+      "What happens to my exit if possession is delayed?"
+    ],
+    "ebook_file": "products/ebooks/02-worli-investor-due-diligence.md",
+    "ebook_title": "Worli Investor Due Diligence"
+  },
+  {
+    "key": "legacy",
+    "label": "Legacy",
+    "slug": "legacy",
+    "title": "A sea-facing home in a small project",
+    "nav": "Sea-face",
+    "blurb": "Developer, registry and resale checks for small sea-facing projects.",
+    "headline": "Looking at a sea-facing home in a small Worli project? Confirm these first.",
+    "intro": "Few units mean few comparable sales. Check the developer record, the registry, and the address before you commit.",
+    "worries": [
+      "Who is the developer, and what is their record?",
+      "How liquid will a resale be in a small building?",
+      "Do the registered sales match the listing price?"
+    ],
+    "ebook_file": "products/ebooks/03-sea-face-legacy-buyer-guide.md",
+    "ebook_title": "Sea-Face Legacy Buyer's Guide"
+  }
+]

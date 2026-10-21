@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "toolkit/**"
+      - "products/**"
+      - "data/properties.csv"
   workflow_dispatch:
 
 permissions:
@@ -24,6 +27,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build site through the pipeline (web runs only after its checks pass)
+        run: python3 toolkit/orchestrator/orchestrator.py run --only web compliance
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

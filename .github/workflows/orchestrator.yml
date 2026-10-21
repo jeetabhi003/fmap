@@ -2,20 +2,7 @@ name: Run project orchestrator
 
 on:
   push:
-    paths:
-      - "toolkit/**"
-      - "data/**"
-      - "scripts/**"
-      - "products/**"
-      - "site/**"
-      - ".github/workflows/orchestrator.yml"
   pull_request:
-    paths:
-      - "toolkit/**"
-      - "data/**"
-      - "scripts/**"
-      - "products/**"
-      - "site/**"
   workflow_dispatch:
 
 permissions:
@@ -29,5 +16,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Run pipeline
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Run pipeline (private inputs are absent here, so those departments report pending or blocked)
         run: python3 toolkit/orchestrator/orchestrator.py run
+      - name: Generated site matches the committed site
+        run: git diff --exit-code -- site/

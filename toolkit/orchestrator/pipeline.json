@@ -1,12 +1,16 @@
 {
-  "description": "Jobs run in this order. A job runs only when every job in depends_on is ok. Add a job by writing a function in orchestrator.py, registering it in JOBS, and listing it here after its dependencies.",
-  "jobs": [
-    {"name": "research_input", "depends_on": []},
-    {"name": "validate_register", "depends_on": []},
-    {"name": "site_placeholders", "depends_on": []},
-    {"name": "ebook_outlines", "depends_on": []},
-    {"name": "lead_summary", "depends_on": []},
-    {"name": "shortlist_ready", "depends_on": ["validate_register"]},
-    {"name": "ebook_drafts", "depends_on": ["research_input", "ebook_outlines"]}
+  "description": "Departments run in this order. depends_on must be ok for a department to run. uses is optional input: it is read when that department finished ok, and ignored otherwise.",
+  "departments": [
+    {"name": "engine",     "depends_on": [],             "uses": [],                          "output": "outputs/engine"},
+    {"name": "intake",     "depends_on": [],             "uses": ["engine"],                  "output": "outputs/intake"},
+    {"name": "register",   "depends_on": [],             "uses": [],                          "output": "outputs/register"},
+    {"name": "listings",   "depends_on": ["register"],   "uses": [],                          "output": "outputs/listings"},
+    {"name": "references", "depends_on": [],             "uses": [],                          "output": "outputs/references"},
+    {"name": "matching",   "depends_on": ["register"],   "uses": [],                          "output": "outputs/matching"},
+    {"name": "content",    "depends_on": ["register"],   "uses": ["listings", "references"],  "output": "outputs/content"},
+    {"name": "web",        "depends_on": ["matching"],   "uses": [],                          "output": "site"},
+    {"name": "compliance", "depends_on": ["web"],        "uses": ["content"],                 "output": "outputs/compliance"},
+    {"name": "leads",      "depends_on": [],             "uses": [],                          "output": "outputs/leads"},
+    {"name": "launch",     "depends_on": ["content", "compliance"], "uses": [],               "output": "outputs/launch"}
   ]
 }

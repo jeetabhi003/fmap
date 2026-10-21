@@ -3,93 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Worli Property Guide</title>
-<meta name="description" content="Free checklist and verified project data for buying in Worli. Check RERA before you pay.">
-<style>
-  :root {
-    --bg: #fafaf7;
-    --fg: #1d1d1b;
-    --muted: #5d5d58;
-    --accent: #1f5f4a;
-    --card: #ffffff;
-    --line: #e2e2dc;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #161614;
-      --fg: #ecece6;
-      --muted: #a4a49c;
-      --accent: #7fc4a8;
-      --card: #1f1f1c;
-      --line: #33332f;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #161614;
-    --fg: #ecece6;
-    --muted: #a4a49c;
-    --accent: #7fc4a8;
-    --card: #1f1f1c;
-    --line: #33332f;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
-  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 12px; }
-  h2 { font-size: 1.25rem; margin: 32px 0 8px; }
-  p { margin: 0 0 12px; color: var(--muted); }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 20px;
-    margin: 16px 0;
-  }
-  ul { padding-left: 20px; color: var(--muted); }
-  .btn {
-    display: inline-block;
-    background: var(--accent);
-    color: #fff;
-    text-decoration: none;
-    padding: 12px 18px;
-    border-radius: 8px;
-    font-weight: 600;
-  }
-  .note { font-size: 0.9rem; }
-  footer { margin-top: 48px; font-size: 0.85rem; color: var(--muted); }
-</style>
+<title>Find Me A Property</title>
+<meta name="description" content="Verified project facts and checklists for property buyers.">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<header><a class="brand" href="index.html">Find Me A Property</a> <a href="end-user.html">Buy to live</a> <a href="investor.html">Invest</a> <a href="legacy.html">Sea-face</a></header>
 <main>
-  <h1>Buying in Worli? Check these before you pay a deposit.</h1>
-  <p>A free checklist, and project data where every price and RERA number has a source and a date.</p>
-
-  <div class="card">
-    <h2>Get the free checklist</h2>
-    <p>Tell us your segment and we will send the checklist and a short email sequence. You can unsubscribe at any time.</p>
-    <!-- Replace FORM_ID with the Google Form that writes to the lead sheet (see data/leads/README.md). -->
-    <p><a class="btn" href="https://docs.google.com/forms/d/e/FORM_ID/viewform">Get the checklist</a></p>
-    <p class="note">We store your name, email and segment only. Details are in our privacy note.</p>
-  </div>
-
-  <h2>Who this is for</h2>
-  <ul>
-    <li><strong>Buying a home to live in:</strong> ready-possession checks, OC, and price per sq ft.</li>
-    <li><strong>Investing to rent or resell:</strong> registered vs. asking price, developer checks, and possession risk.</li>
-    <li><strong>Looking for a sea-facing home in a small project:</strong> developer and registry checks.</li>
-  </ul>
-
-  <h2>What we do not do</h2>
-  <p>We do not predict returns and we do not call any project the best. Projects marked "price on request" have no verified price yet.</p>
-
-  <footer>
-    Research, not advice. Verify each project on MahaRERA before you pay. Property sales are handled by a licensed agent. Agent registration number: <em>to be added</em>.
-  </footer>
+<h1>Buying property in Worli, Mumbai? Check before you pay.</h1>
+<p>A free checklist, guides for each kind of buyer, and a shortlist service. Every project fact comes with its MahaRERA ID and the date it was checked.</p>
+<h2>Which buyer are you?</h2>
+<div class="cards"><div class="card"><h3><a href="end-user.html">Buying a home to live in</a></h3><p>Possession, occupancy certificate and price checks for a home you will live in.</p></div><div class="card"><h3><a href="investor.html">Investing to rent or resell</a></h3><p>Asking vs. registered prices, developer record and possession risk.</p></div><div class="card"><h3><a href="legacy.html">A sea-facing home in a small project</a></h3><p>Developer, registry and resale checks for small sea-facing projects.</p></div></div>
+<h2>How it works</h2>
+<ol>
+<li><strong>Free checklist.</strong> The checks to run before any deposit.</li>
+<li><strong>Guide.</strong> A deeper guide for your kind of purchase.</li>
+<li><strong>Shortlist.</strong> Projects that fit your budget, handed to a MahaRERA-registered agent.</li>
+</ol>
+<h2>What we do not do</h2>
+<p>We do not predict returns, rank any project as a sure thing, or take deposits. Unknown facts stay marked unknown.</p>
 </main>
+<footer>
+<p>Research, not advice. Verify each project on MahaRERA before you pay. Project data as of 2026-10-09.</p>
+<p>Property sales are handled by a MahaRERA-registered agent: registration number to be added before launch. <a href="privacy.html">Privacy</a></p>
+</footer>
 </body>
 </html>

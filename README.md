@@ -1,39 +1,51 @@
-# fmap: Worli property guides and funnels
+# fmap: Find Me A Property pipeline
 
-A free-tools setup for selling three ebooks and a shortlist service to three Worli customer segments.
+One orchestrator runs the business as a pipeline: research → verified register → listings and reel references → post kits → website funnels → compliance → launch. Every department does its work, verifies it, and saves it. Design: [`docs/architecture.md`](docs/architecture.md).
 
-## What is here
+## Set up on the laptop
+
+1. Clone the repo and check out this branch.
+2. Create `toolkit/config.local.json` (not committed) pointing at the research engine:
+   ```json
+   {
+     "engine": { "root": "/Users/abhijeet/Desktop/market intelligence/research and content engine" }
+   }
+   ```
+   Add launch settings here too when you have them (see `toolkit/config.json` for the keys).
+3. Put the private inputs in place. All of them stay out of git:
+   - Research document → `data/inputs/research/`
+   - Internet listings → `data/inputs/listings.csv` (start from `data/inputs/listings.template.csv`)
+   - Reference reels → `data/inputs/reels.csv` (start from `data/inputs/reels.template.csv`)
+   - Lead sheet export → `data/leads/export.csv`
+4. Run it:
+   ```bash
+   python3 toolkit/orchestrator/orchestrator.py run                # uses the engine's latest output
+   python3 toolkit/orchestrator/orchestrator.py run --run-engine   # re-runs the engine first (hours)
+   ```
+5. Read `outputs/report/status.md`. It lists what is done, what needs a person, and what failed.
+
+## What is where
 
 | Path | What it is |
 |---|---|
-| `data/properties.csv` | The 19-project register, from the Worli knowledge base (9 Oct 2026). Only verified prices are shown. |
-| `scripts/validate_register.py` | Checks the register on every push. Fails if a price is marked verified without a range, or a shortlisted project has no RERA ID. |
-| `docs/strategy/funnel.md` | The three layers: free checklist, paid ebook, shortlist handoff. |
-| `docs/strategy/segments.md` | End user, investor, legacy buyer. Each is labelled as a hypothesis until real replies arrive. |
-| `docs/strategy/compliance.md` | RERA agent rules, DPDP data rules, accuracy rules. Read before going live. |
-| `products/ebooks/` | Outlines for three ebooks, one per segment. |
-| `data/leads/README.md` | Schema for the Google Sheet. Lead data does not go in this repo. |
-| `site/index.html` | Landing page for GitHub Pages with a lead-capture button. |
-| `.github/workflows/` | `validate.yml` checks the register. `pages.yml` deploys the site. |
+| `toolkit/orchestrator/` | The orchestrator and `pipeline.json` (department order) |
+| `toolkit/departments/` | One file per department |
+| `toolkit/config.json` | Settings; overlaid by `config.local.json` on the laptop |
+| `toolkit/segments.json` | The three customer segments and their funnel copy |
+| `data/properties.csv` | The curated project register (edited by a person) |
+| `products/` | Ebook outlines, free checklist, email sequences, shortlist service |
+| `site/` | The generated website (do not edit by hand; edit `toolkit/departments/web.py`) |
+| `docs/strategy/` | Funnel, segments, compliance rules |
+| `tests/` | Tests for every department |
 
-## Free stack
+## Rules the pipeline enforces
 
-- **Hosting:** GitHub Pages (`site/`)
-- **Checks and automation:** GitHub Actions (free for public repos; check the minutes limit for private ones)
-- **Lead capture and storage:** Google Forms and Google Sheets
-- **Email:** Gmail, sent by hand for the first 100 leads, then a free-tier mailing list
-- **Payments for ebooks:** a free-to-list store such as Gumroad (charges a fee per sale)
+- No project is shown, matched or posted without a real MahaRERA ID.
+- Prices are shown only when verified, always with their date.
+- Internet listings are credited to their source; their photos and videos are used only with rights.
+- Reference reels are studied, never downloaded or reposted.
+- No promised returns, "best", "sold out" or fake urgency anywhere.
+- Lead data never enters the repo; the pipeline reports counts only.
+- Property sales go through a MahaRERA-registered agent.
 
-## Before going live
-
-1. Replace `FORM_ID` in `site/index.html` with the real Google Form.
-2. Add the agent registration number to the footer of `site/index.html`.
-3. Confirm the ebook prices with 20 readers, then set them in `products/ebooks/`.
-4. Work the open items in `data/properties.csv`. The MahaRERA complaint counts and the OC checks need a person at the portal.
-5. Have a lawyer or a RERA-registered agent review `docs/strategy/compliance.md`.
-
-## Limits
-
-- The knowledge base is a dated snapshot. Re-verify the register each quarter.
-- The segments are hypotheses until real replies come in from Layer 1.
-- This repo does not send email or take payments. Those steps are done in the tools above.
+Research, not advice. Verify each project on MahaRERA before you pay.
