@@ -2,7 +2,7 @@
 
 A department is a module with:
   NAME           its name in pipeline.json
-  do(ctx)        returns {relative_file_name: text}; may raise Blocked or Pending
+  do(ctx)        returns {relative_file_name: text or bytes}; may raise Blocked or Pending
   verify(ctx, files)  returns a list of problems (empty means it passed)
   summary(files) returns a one-line description of what was produced
 
@@ -77,18 +77,25 @@ class Context:
         return None
 
 
+def as_bytes(content):
+    return content if isinstance(content, bytes) else content.encode("utf-8")
+
+
 def version_of(files):
     h = hashlib.sha256()
     for name in sorted(files):
-        h.update(name.encode("utf-8") + b"\0" + files[name].encode("utf-8") + b"\0")
+        h.update(name.encode("utf-8") + b"\0" + as_bytes(files[name]) + b"\0")
     return h.hexdigest()[:12]
 
 
 def write_files(folder, files):
-    for name, text in files.items():
+    for name, content in files.items():
         target = folder / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(text, encoding="utf-8")
+        if isinstance(content, bytes):
+            target.write_bytes(content)
+        else:
+            target.write_text(content, encoding="utf-8")
 
 
 def promote(folder, files, department):
@@ -107,7 +114,7 @@ def promote(folder, files, department):
     manifest = {
         "department": department,
         "version": version,
-        "files": {n: hashlib.sha256(t.encode("utf-8")).hexdigest()[:12] for n, t in sorted(files.items())},
+        "files": {n: hashlib.sha256(as_bytes(c)).hexdigest()[:12] for n, c in sorted(files.items())},
     }
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return True
@@ -161,6 +168,14 @@ def has_rera_id(text):
     import re
 
     return bool(re.search(r"P[0-9A-Z]{10,15}", text or ""))
+
+
+def place(locality, market="Worli"):
+    """'Naka' -> 'Worli Naka'; leaves names that already include the market alone."""
+    locality = (locality or "").strip()
+    if not locality:
+        return market
+    return locality if market.lower() in locality.lower() or "(" in locality else f"{market} {locality}"
 
 
 def slugify(text):

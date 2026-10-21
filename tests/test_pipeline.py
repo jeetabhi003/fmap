@@ -1,9 +1,11 @@
 """Tests for the orchestrator and every department. Run: python3 -m unittest discover -s tests"""
 
 import csv
+import http.server
 import io
 import json
 import shutil
+import threading
 import sys
 import tempfile
 import unittest
@@ -16,7 +18,7 @@ sys.path.insert(0, str(REPO / "toolkit" / "orchestrator"))
 
 import orchestrator  # noqa: E402
 from core import Context, Result, promote, run_department  # noqa: E402
-from departments import compliance, intake, listings, matching, references  # noqa: E402
+from departments import compliance, intake, listings, matching, references, storyboard, video  # noqa: E402
 
 LISTING_FIELDS = listings.COLUMNS
 REEL_FIELDS = references.COLUMNS
@@ -176,6 +178,92 @@ class DepartmentTests(unittest.TestCase):
         self.assertFalse(compliance.scan_text("We do not predict returns."))
 
 
+REEL_CAPTIONS = [
+    {"url": "https://www.instagram.com/reel/AAA/", "account": "@one", "format": "talking head", "length_sec": "24",
+     "caption": "₹3.2 Cr for a 2 BHK in Worli?\n1. Check the RERA page\n2. Ask for carpet area\n3. Compare registered sales\n"
+                "Comment CHECK for the list #Worli #Mumbai #RealEstate"},
+    {"url": "https://www.instagram.com/reel/BBB/", "account": "@two", "format": "talking head", "length_sec": "30",
+     "caption": "Is the brochure price the real price?\nSave this before your next site visit. #Mumbai"},
+]
+
+
+class AnalysisTests(unittest.TestCase):
+    def test_caption_features_and_pattern(self):
+        f = references.analyse_caption(REEL_CAPTIONS[0]["caption"])
+        self.assertEqual(f["pattern"], "price_reveal")
+        self.assertTrue(f["hook_has_price"])
+        self.assertEqual(f["list_lines"], 3)
+        self.assertEqual(f["hashtags"], 3)
+        self.assertIn("comment", f["ctas"])
+        q = references.analyse_caption(REEL_CAPTIONS[1]["caption"])
+        self.assertEqual(q["pattern"], "question_hook")
+        self.assertIn("save", q["ctas"])
+        self.assertIn("opens on a price", " ".join(references.reasons(f)))
+
+    def test_parse_instagram_meta(self):
+        page = ('<meta property="og:description" content="1,234 likes, 56 comments - some.account on October 1, 2026: '
+                '&quot;Line one\nLine two #tag&quot;. ">')
+        meta = references.parse_og_description(page)
+        self.assertEqual(meta["likes"], 1234)
+        self.assertEqual(meta["comments"], 56)
+        self.assertEqual(meta["account"], "@some.account")
+        self.assertTrue(meta["caption"].startswith("Line one"))
+
+    def test_spoken_id_and_place(self):
+        self.assertEqual(storyboard.spoken_id("P51900080218 / P51900080252"), "P 5 1 9 0 0 0 8 0 2 1 8")
+        from core import place
+        self.assertEqual(place("Naka"), "Worli Naka")
+        self.assertEqual(place("Worli Naka"), "Worli Naka")
+
+
+class FakeMoneyPrinterTurbo(http.server.BaseHTTPRequestHandler):
+    """Mimics MoneyPrinterTurbo: POST /api/v1/videos, GET /api/v1/tasks/{id}, static /tasks/... files."""
+    polls = 0
+
+    def log_message(self, *args):
+        pass
+
+    def _json(self, body):
+        data = json.dumps(body).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_POST(self):
+        length = int(self.headers["Content-Length"])
+        body = json.loads(self.rfile.read(length))
+        assert self.headers.get("x-api-key") == "secret"
+        assert body["video_aspect"] == "9:16" and body["video_script"]
+        self._json({"status": 200, "data": {"task_id": "t1"}})
+
+    def do_GET(self):
+        if self.path == "/api/v1/tasks/t1":
+            FakeMoneyPrinterTurbo.polls += 1
+            done = FakeMoneyPrinterTurbo.polls > 1
+            self._json({"status": 200, "data": {"state": 1 if done else 4, "progress": 100 if done else 50,
+                                                 "videos": ["http://127.0.0.1/tasks/t1/final-1.mp4"] if done else []}})
+        elif self.path == "/tasks/t1/final-1.mp4":
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"MP4BYTES")
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+
+class VideoTests(unittest.TestCase):
+    def test_moneyprinterturbo_adapter(self):
+        server = http.server.HTTPServer(("127.0.0.1", 0), FakeMoneyPrinterTurbo)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        try:
+            url = f"http://127.0.0.1:{server.server_port}"
+            body = {"video_aspect": "9:16", "video_script": "hello"}
+            self.assertEqual(video.moneyprinterturbo(url, body, "secret", timeout_sec=10, poll_sec=0), b"MP4BYTES")
+        finally:
+            server.shutdown()
+
+
 class PipelineTests(Sandbox):
     def test_committed_repo_runs_clean(self):
         ctx, code = self.run_pipeline()
@@ -193,7 +281,7 @@ class PipelineTests(Sandbox):
                   [listing(), listing(listing_id="L2", rera_id="bad")])
         write_csv(self.tmp / "data" / "inputs" / "reels.csv", REEL_FIELDS, [
             {"url": "https://www.instagram.com/reel/AAA/", "format": "walkthrough", "length_sec": "40",
-             "hook_pattern": "price first", "why_it_works": "clear number"},
+             "caption": "₹9 Cr in Worli: what is verified?"},
             {"url": "https://www.instagram.com/reel/BBB/", "format": "walkthrough", "length_sec": "30"},
         ])
         ctx, code = self.run_pipeline()
@@ -235,6 +323,52 @@ class PipelineTests(Sandbox):
             orchestrator.run(ctx, ["intake", "engine"])
         self.assertEqual(ctx.results["engine"].status, "ok", ctx.results["engine"].message)
         self.assertIn("Engine Tower", (self.tmp / "outputs" / "intake" / "candidates.csv").read_text())
+
+    def test_reels_analysed_without_copying_captions(self):
+        write_csv(self.tmp / "data" / "inputs" / "reels.csv", REEL_FIELDS, REEL_CAPTIONS + [{"url": "https://example.com/x"}])
+        ctx, _ = self.run_pipeline(only=["references", "storyboard"])
+        self.assertEqual(ctx.results["references"].status, "ok", ctx.results["references"].message)
+        playbook = (self.tmp / "outputs" / "references" / "playbook.md").read_text()
+        self.assertNotIn("Check the RERA page", playbook)
+        self.assertIn("price_reveal", playbook)
+        style = json.loads((self.tmp / "outputs" / "references" / "style.json").read_text())
+        self.assertEqual(style["by_segment"]["investor"]["template"], "price_check")
+        self.assertEqual(style["caption"]["top_cta"], "comment")
+        plan_path = next((self.tmp / "outputs" / "storyboard" / "plans").glob("*.json"))
+        plan = json.loads(plan_path.read_text())
+        self.assertEqual(plan["duration_sec"], 27.0)  # median of 24 and 30 seconds
+        self.assertAlmostEqual(sum(s["duration_sec"] for s in plan["scenes"]), 27.0)
+        self.assertIn("Comment CHECKLIST", plan["caption"])
+
+    def test_banned_claim_blocks_storyboard(self):
+        path = self.tmp / "data" / "properties.csv"
+        path.write_text(path.read_text().replace("Developer not listed; locality address conflict",
+                                                 "Assured returns of 12 percent"))
+        ctx, code = self.run_pipeline(only=["storyboard"])
+        self.assertEqual(code, 1)
+        self.assertEqual(ctx.results["storyboard"].status, "failed")
+
+    def test_video_waits_for_render_flag(self):
+        ctx, _ = self.run_pipeline(only=["video"])
+        self.assertEqual(ctx.results["video"].status, "pending")
+
+    @unittest.skipUnless(shutil.which("ffmpeg") and (REPO / "video" / "node_modules").exists(),
+                         "needs ffmpeg and `cd video && npm ci`")
+    def test_render_one_reel(self):
+        shutil.copytree(REPO / "video", self.tmp / "video", symlinks=True,
+                        ignore=shutil.ignore_patterns("out"))
+        config = json.loads((self.tmp / "toolkit" / "config.json").read_text())
+        config["video"].update(voice_engine="none", max_reels=1, default_length_sec=15)
+        headless = Path("/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell")
+        if headless.exists():
+            config["video"]["browser_executable"] = str(headless)
+        ctx = Context(root=self.tmp, config=config, options={"render": True})
+        with redirect_stdout(io.StringIO()):
+            orchestrator.run(ctx, ["video"])
+        self.assertEqual(ctx.results["video"].status, "ok", ctx.results["video"].message)
+        info = video.probe(next((self.tmp / "outputs" / "video").glob("*.mp4")))
+        self.assertEqual((info["width"], info["height"]), (1080, 1920))
+        self.assertTrue(info["has_audio"])
 
     def test_only_runs_dependencies(self):
         ctx, _ = self.run_pipeline(only=["web"])

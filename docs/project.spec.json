@@ -1,0 +1,225 @@
+{
+  "spec_version": "1.0",
+  "updated": "2026-10-21",
+  "how_to_use": "Give this file to Claude Code at the root of the fmap repo with the agent_prompt below. It describes the whole project, the decisions already made, every pipeline (department), how each is verified, and what to build next.",
+  "agent_prompt": "You are the single orchestrating agent for Find Me A Property (fmap). Read docs/project.spec.json, docs/architecture.md and .claude/skills/fmap-pipeline/SKILL.md first. Work one pipeline at a time, in build_order. For each pipeline: (1) ask the user the open questions listed for it and record their answers in this spec under decisions; (2) state the plan in a few lines; (3) build or change only what that pipeline needs; (4) verify it: run `python3 -m unittest discover -s tests` and `python3 toolkit/orchestrator/orchestrator.py run` (add --fetch-reels or --render on the laptop when the pipeline needs them), then read outputs/report/status.md; (5) report what passed, what is blocked and why. Never weaken a verification rule or a compliance pattern to make a run pass. Never post, email, scrape media, or contact anyone. Never commit private inputs, outputs, or config.local.json: the repo is public.",
+
+  "project": {
+    "name": "Find Me A Property (fmap)",
+    "market": "Worli, Mumbai",
+    "what_we_sell": [
+      "Layer 1: free buyer's checklist (lead capture)",
+      "Layer 2: paid ebook per segment",
+      "Layer 3: property shortlist, handed to a MahaRERA-registered agent"
+    ],
+    "segments": {
+      "investor": "buying to rent or resell (first focus for reels)",
+      "end_user": "buying a home to live in",
+      "legacy": "sea-facing home in a small project"
+    },
+    "repo": "github.com/jeetabhi003/fmap (public), branch claude/product-funnels-setup",
+    "laptop_engine": "research and content engine (backend/main.py, social-media-manager/v11_carousel_generator.py) at engine.root in toolkit/config.local.json"
+  },
+
+  "decisions": [
+    {"topic": "reel input", "answer": "User gives reel links; captions fetched on the laptop with --fetch-reels (Instagram is blocked from the cloud session). Captions can also be pasted into reels.csv."},
+    {"topic": "video tools", "answer": "Combine: Remotion templates for data reels (main), MoneyPrinterTurbo for a stock-footage version, ffmpeg for audio and checks, OpenMontage as an optional third version via a brief."},
+    {"topic": "footage", "answer": "User wanted listing and portal media. Decision: facts from listings and portals are used with source credit; their photos and videos are not scraped or reused (copyright and portal terms). Visuals are data cards, free licensed stock (Pexels via MoneyPrinterTurbo), own footage later, and listing media only with written permission logged in listings.csv."},
+    {"topic": "voice", "answer": "AI voice now (edge-tts, en-IN-NeerjaNeural), the user's own voice later via custom audio."},
+    {"topic": "language", "answer": "English"},
+    {"topic": "first segment", "answer": "Investor"},
+    {"topic": "rendering", "answer": "Laptop, where private inputs live. CI renders one silent test reel to prove the pipeline works."},
+    {"topic": "reference reels reuse", "answer": "Analyse why they work and rebuild the pattern in our own words. Never copy captions, footage, or audio."}
+  ],
+
+  "constraints": [
+    "No project shown, matched, posted, or rendered without a real MahaRERA ID.",
+    "Prices only when verified, always with their date.",
+    "No promised returns, 'best', 'sold out', 'risk-free', or fake urgency (toolkit/departments/compliance.py).",
+    "Every caption and reel carries: 'Research, not advice. Verify on MahaRERA before you pay.'",
+    "Every post needs the MahaRERA QR code and the agent's MahaRERA registration before posting.",
+    "Lead data never enters the repo; only counts are reported. DPDP Act 2023: consent, minimal data, deletion on request.",
+    "Property sales only through a MahaRERA-registered agent; no deposits or commissions taken by fmap.",
+    "Use calesthio/OpenMontage only. The lookalike Open-Montage-app/OpenMontage pushes an installer download and is not trusted."
+  ],
+
+  "commands": {
+    "tests": "python3 -m unittest discover -s tests",
+    "run_all": "python3 toolkit/orchestrator/orchestrator.py run",
+    "run_some": "python3 toolkit/orchestrator/orchestrator.py run --only storyboard video",
+    "fetch_reel_captions": "python3 toolkit/orchestrator/orchestrator.py run --only references --fetch-reels",
+    "render_reels": "python3 toolkit/orchestrator/orchestrator.py run --only video --render",
+    "rerun_research_engine": "python3 toolkit/orchestrator/orchestrator.py run --run-engine",
+    "shortlist_buyer": "python3 toolkit/orchestrator/orchestrator.py match --segment investor --budget-cr 30",
+    "status": "python3 toolkit/orchestrator/orchestrator.py status",
+    "remotion_studio": "cd video && npm ci && npm run studio"
+  },
+
+  "pipelines": [
+    {
+      "name": "engine",
+      "purpose": "Run the laptop research engine and carousel generator; collect the newest *_projects.json.",
+      "inputs": ["engine.root in toolkit/config.local.json"],
+      "outputs": ["outputs/engine/projects.json"],
+      "verify": ["valid JSON list", "every project has project_name"],
+      "human_gate": "none",
+      "status": "built; blocked until engine.root is set on the laptop",
+      "open_questions": ["Has the engine's projects.json format changed since the 2 Aug Drive copy?"]
+    },
+    {
+      "name": "intake",
+      "purpose": "Map engine projects to candidate register rows and diff them against data/properties.csv.",
+      "inputs": ["outputs/engine/projects.json or data/inputs/engine/*_projects.json", "data/inputs/research/*"],
+      "outputs": ["outputs/intake/candidates.csv", "outputs/intake/diff.md", "outputs/intake/documents.md"],
+      "verify": ["every candidate has a project name"],
+      "human_gate": "A person reviews diff.md and edits data/properties.csv by hand.",
+      "status": "built; blocked until research input exists",
+      "open_questions": ["Which file is the confirmed research document?"]
+    },
+    {
+      "name": "register",
+      "purpose": "Check the curated project register every other pipeline uses.",
+      "inputs": ["data/properties.csv"],
+      "outputs": ["outputs/register/summary.json"],
+      "verify": ["scripts/validate_register.py rules"],
+      "human_gate": "Set research_confirmed=true once the register matches the research document.",
+      "status": "running; source not yet confirmed"
+    },
+    {
+      "name": "listings",
+      "purpose": "Screen properties found on the internet down to what may be showcased.",
+      "inputs": ["data/inputs/listings.csv (template: data/inputs/listings.template.csv)"],
+      "outputs": ["outputs/listings/showcase.json", "outputs/listings/excluded.md"],
+      "verify": ["valid MahaRERA ID", "https source URL", "retrieved_on date", "RERA ID agrees with the register", "media only with own/licensed/written_permission"],
+      "human_gate": "Ask the lister for written permission before using any of their media.",
+      "status": "built; pending listings.csv",
+      "open_questions": ["Which portals and listings do you want tracked first?"]
+    },
+    {
+      "name": "references",
+      "purpose": "Analyse reference reels: caption hook, length, structure, call to action, hashtags, emoji, engagement; explain why each works; pick a pattern and template per segment.",
+      "inputs": ["data/inputs/reels.csv (url, account, caption, format, length_sec, notes)", "data/inputs/reels_cache.json (from --fetch-reels)"],
+      "outputs": ["outputs/references/analysis.json (private)", "outputs/references/playbook.md", "outputs/references/style.json"],
+      "verify": ["at least one valid Instagram reel URL", "playbook contains no copied caption text"],
+      "human_gate": "Add notes on visuals (cuts, text placement, music) that a caption cannot show.",
+      "status": "built; pending reel links",
+      "open_questions": ["Paste the reference reel links", "Which accounts do you admire most, and why?"]
+    },
+    {
+      "name": "matching",
+      "purpose": "Shortlist projects per segment and budget using verified fields only.",
+      "inputs": ["data/properties.csv"],
+      "outputs": ["outputs/matching/shortlists.json"],
+      "verify": ["matched projects have a real MahaRERA ID and verified price"],
+      "human_gate": "Re-check matched projects on MahaRERA before sending to a buyer.",
+      "status": "running"
+    },
+    {
+      "name": "content",
+      "purpose": "Post kits (reel script, carousel, caption) for verified projects and screened listings.",
+      "outputs": ["outputs/content/posts/*.md"],
+      "verify": ["MahaRERA ID, disclaimer, and QR placeholder in every kit", "no banned claims"],
+      "human_gate": "A person checks and posts.",
+      "status": "running"
+    },
+    {
+      "name": "storyboard",
+      "purpose": "Turn verified projects plus the reel playbook into scene-by-scene reel plans, original captions, a MoneyPrinterTurbo request, and an OpenMontage brief.",
+      "inputs": ["outputs/matching/shortlists.json", "outputs/references/style.json (optional)", "video settings in toolkit/config.json"],
+      "outputs": ["outputs/storyboard/plans/*.json", "outputs/storyboard/moneyprinterturbo/*.json", "outputs/storyboard/openmontage/*.md"],
+      "templates": {
+        "price_check": "price hook → MahaRERA ID → status and developer → still to check → CTA",
+        "three_checks": "3-checks hook → ID → status → open items → CTA",
+        "myth_vs_fact": "myth → registered-sales fact → ID → still to check → CTA"
+      },
+      "verify": ["scene durations add up to the plan", "caption has MahaRERA ID and disclaimer", "no empty scene text", "visuals only data_card/stock/own", "no banned claims in text, voice, or caption"],
+      "human_gate": "none before rendering",
+      "status": "running (2 investor plans from verified projects)",
+      "open_questions": ["Preferred reel length?", "Any hook lines you want to test?"]
+    },
+    {
+      "name": "video",
+      "purpose": "Render plans to MP4: edge-tts voice per scene, scenes stretched to fit speech, ffmpeg join and loudness normalisation (-14 LUFS), Remotion render; optional MoneyPrinterTurbo stock version.",
+      "inputs": ["outputs/storyboard/plans/*.json", "video/ (Remotion project; cd video && npm ci)", "ffmpeg", "edge-tts (pip install edge-tts)", "optional: MoneyPrinterTurbo running at video.moneyprinterturbo_url"],
+      "outputs": ["outputs/video/<id>.mp4", "outputs/video/<id>.caption.txt", "outputs/video/<id>.timed.json", "outputs/video/<id>.stock.mp4 (MoneyPrinterTurbo)", "outputs/video/report.md"],
+      "verify": ["1080x1920", "H.264", "has audio", "duration within 0.5s of the timed plan"],
+      "human_gate": "Watch every render; check facts on MahaRERA; add QR code and agent number; post by hand.",
+      "status": "running; verified here with a silent voice (edge-tts is blocked from the cloud session, works on the laptop)",
+      "open_questions": ["Brand colours and logo?", "Background music source?"]
+    },
+    {
+      "name": "web",
+      "purpose": "Static site: home, three segment funnels (checklist → guide → shortlist), checklist, privacy.",
+      "outputs": ["site/*.html"],
+      "verify": ["disclaimer on every page", "no placeholders", "no broken links"],
+      "status": "running; deploys from main via GitHub Pages once main exists"
+    },
+    {
+      "name": "compliance",
+      "purpose": "Scan site, products, and post kits for banned claims.",
+      "outputs": ["outputs/compliance/report.json"],
+      "verify": ["zero findings"],
+      "status": "running"
+    },
+    {
+      "name": "leads",
+      "purpose": "Counts from a local Google Sheet export; never names, emails, or phones.",
+      "inputs": ["data/leads/export.csv"],
+      "verify": ["every row has recorded consent"],
+      "status": "built; pending export"
+    },
+    {
+      "name": "launch",
+      "purpose": "Final gate listing every missing launch setting.",
+      "verify": ["form links, agent MahaRERA number, contact email, ebook store links, research_confirmed"],
+      "status": "blocked until settings are provided"
+    }
+  ],
+
+  "reel_analysis": {
+    "features_measured": ["hook word count", "number or price in hook", "question hook", "lines", "words", "list lines", "hashtags", "emoji", "mentions", "calls to action", "likes and comments when fetched"],
+    "patterns": {
+      "price_reveal": "hook opens on a price → fits investor, end_user → template price_check",
+      "list": "3+ list lines → fits all → template three_checks",
+      "question_hook": "hook is a question → fits end_user, legacy → template three_checks",
+      "myth_vs_fact": "myth/fact framing → fits investor, legacy → template myth_vs_fact",
+      "pov": "POV opener → fits end_user → template three_checks",
+      "statement": "plain statement → fits all → template price_check"
+    },
+    "reuse_rules": ["Copy the shape, not the words.", "Caption length, hashtag count and CTA type follow the reference median.", "All facts come from the verified register, never from the reference reel."]
+  },
+
+  "video_stack": {
+    "remotion": {"version": "4.0.532", "project": "video/", "composition": "Reel", "notes": "Renders any plan JSON; keeps text out of Instagram's top 260px and bottom 460px."},
+    "ffmpeg": {"uses": ["per-scene voice padding", "joining audio", "loudness normalisation", "ffprobe verification"]},
+    "edge_tts": {"version": "7.3.1", "voice": "en-IN-NeerjaNeural", "notes": "Free Microsoft neural voices; needs internet on the laptop."},
+    "moneyprinterturbo": {
+      "repo": "https://github.com/harry0703/MoneyPrinterTurbo",
+      "api": {"create": "POST /api/v1/videos (VideoParams: video_subject, video_script, video_terms, video_aspect '9:16', video_source 'pexels', voice_name, subtitle_enabled)", "poll": "GET /api/v1/tasks/{task_id} → data.state 1 complete, -1 failed, 4 processing; data.videos list", "download": "GET /tasks/<file> (x-api-key header when app.api_key is set)", "default_port": 8080},
+      "config": "video.moneyprinterturbo_url and video.moneyprinterturbo_api_key in toolkit/config.local.json; needs a Pexels API key in its own config.toml"
+    },
+    "openmontage": {
+      "repo": "https://github.com/calesthio/OpenMontage",
+      "license": "AGPLv3: used as a separate tool, never copied into this repo",
+      "usage": "Clone it, run `make setup`, open it in Claude Code, and paste outputs/storyboard/openmontage/<id>.md as the prompt.",
+      "status": "optional third version; not automated"
+    }
+  },
+
+  "build_order": [
+    {"phase": 1, "item": "Core pipeline, register, matching, content, web, compliance, leads, launch", "status": "done"},
+    {"phase": 2, "item": "Reel analysis (references), storyboard, video render with Remotion + ffmpeg + edge-tts, MoneyPrinterTurbo adapter, OpenMontage briefs", "status": "done; verified with tests and a real render"},
+    {"phase": 3, "item": "Run on the laptop: set engine.root, paste reel links, run --fetch-reels then --render with edge-tts", "status": "next, needs the user"},
+    {"phase": 4, "item": "Stock b-roll inside Remotion scenes (Pexels API) and own-footage scenes (visual.kind own)", "status": "planned"},
+    {"phase": 5, "item": "Ebook drafting with the Claude API from the research document (explicit command only)", "status": "planned; needs the user's go-ahead and an API key"},
+    {"phase": 6, "item": "Launch: forms, agent number, store links, research confirmed, create main branch for Pages", "status": "needs the user"}
+  ],
+
+  "open_questions_now": [
+    "Paste the reference reel links (and captions if you have them).",
+    "Brand: logo, colours, and font, or keep the current green and cream palette?",
+    "Background music: none, YouTube Audio Library, or Pixabay Music?",
+    "Should reels cover all matched investor projects or one per week?",
+    "Your MahaRERA agent registration number and the agent's name for captions."
+  ]
+}

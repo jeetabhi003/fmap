@@ -17,8 +17,42 @@
   },
   "engine": {
     "root": "",
-    "research_cmd": ["python3", "backend/main.py", "reference/inputs/Worli.csv", "--area", "Worli"],
-    "carousel_cmd": ["python3", "social-media-manager/v11_carousel_generator.py"],
+    "research_cmd": [
+      "python3",
+      "backend/main.py",
+      "reference/inputs/Worli.csv",
+      "--area",
+      "Worli"
+    ],
+    "carousel_cmd": [
+      "python3",
+      "social-media-manager/v11_carousel_generator.py"
+    ],
     "projects_glob": "output/reports/*_projects.json"
+  },
+  "video": {
+    "segment": "investor",
+    "max_reels": 3,
+    "default_length_sec": 20,
+    "voice_engine": "edge-tts",
+    "voice": "en-IN-NeerjaNeural",
+    "mpt_voice": "en-IN-NeerjaNeural-Female",
+    "tts_proxy": "",
+    "browser_executable": "",
+    "moneyprinterturbo_url": "",
+    "moneyprinterturbo_api_key": "",
+    "stock_terms": [
+      "mumbai skyline",
+      "worli sea link",
+      "apartment interior",
+      "city traffic night"
+    ],
+    "brand": {
+      "name": "Find Me A Property",
+      "bg": "#10201a",
+      "fg": "#f4f1ea",
+      "accent": "#7fc4a8",
+      "muted": "#a9b7ae"
+    }
   }
 }

@@ -11,7 +11,7 @@ code, and posts it. Nothing here is posted automatically.
 
 import json
 
-from core import has_rera_id, read_csv_rows, slugify
+from core import has_rera_id, place, read_csv_rows, slugify
 from departments.compliance import scan_text
 
 NAME = "content"
@@ -35,6 +35,7 @@ def _agent_line(ctx):
 
 
 def project_kit(row, as_of, fmt, length, agent_line):
+    row = {**row, "locality": place(row["locality"])}
     low, high = row["price_cr_range"].split("-")
     return f"""# {row['project']}: post kit
 

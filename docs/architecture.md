@@ -12,6 +12,8 @@ One orchestrator (`toolkit/orchestrator/orchestrator.py`) runs the whole busines
  data/properties.csv ───────────────────► register ─┬─► matching ─► web ─► compliance ─┐
  data/inputs/listings.csv ──────────────► listings ─┤                     ▲            │
  data/inputs/reels.csv ─────────────────► references┤                     │            ├─► launch ──► person fills launch settings
+                     (patterns, captions)      │    └─► storyboard ─► video ─► MP4 reels (Remotion, ffmpeg, edge-tts,
+                                               │                                         MoneyPrinterTurbo) ─► person watches and posts
                                                     └─► content ──────────┘            │              (form links, agent number,
                                                          post kits (drafts) ──────────►┘               store links, research confirmed)
  data/leads/export.csv ─────────────────► leads (counts only)                               person posts, emails, sells
@@ -25,9 +27,11 @@ One orchestrator (`toolkit/orchestrator/orchestrator.py`) runs the whole busines
 | intake | Maps engine projects to candidate rows; lists research documents | Every candidate has a project name | `outputs/intake/` (`candidates.csv`, `diff.md`) |
 | register | Summarises `data/properties.csv` | Rules in `scripts/validate_register.py` | `outputs/register/` |
 | listings | Screens internet listings | Showcased listings have a valid MahaRERA ID, an https source, a retrieval date, a RERA ID that agrees with the register, and media only with rights | `outputs/listings/` |
-| references | Builds a style brief from reference reels | At least one valid Instagram reel URL. Nothing is downloaded | `outputs/references/` |
+| references | Analyses reference reels: caption hook, structure, length, call to action, hashtags, engagement; says why each works; picks a pattern per segment (`--fetch-reels` fetches captions on the laptop) | At least one valid reel URL; the playbook copies no caption text. Nothing is downloaded | `outputs/references/` |
 | matching | Shortlists per segment | Every matched project has a real MahaRERA ID and a verified price | `outputs/matching/` |
 | content | Reel scripts, carousels and captions for verified projects and screened listings | Each kit has its MahaRERA ID, the disclaimer and a QR placeholder; no banned claims | `outputs/content/` |
+| storyboard | Scene-by-scene reel plans for the configured segment, using the template the references department picked; original captions; MoneyPrinterTurbo request and OpenMontage brief per reel | Scene times add up; caption has MahaRERA ID and disclaimer; visuals only data cards, stock or own; no banned claims | `outputs/storyboard/` |
+| video | With `--render` (laptop): edge-tts voice per scene, ffmpeg join and loudness, Remotion render (`video/`), optional MoneyPrinterTurbo stock version | 1080x1920, H.264, audio present, duration within 0.5s of plan | `outputs/video/` |
 | web | Builds the site: home, three segment funnels, checklist, privacy | Disclaimer on every page; no placeholders; no broken links | `site/` |
 | compliance | Scans the site, products and post kits | No banned claims (returns, "best", "sold out", fake urgency) | `outputs/compliance/` |
 | leads | Counts leads from a local sheet export | Every row has recorded consent | `outputs/leads/` |
@@ -57,4 +61,6 @@ The repo is public. Research documents, engine output, listings, reel lists, lea
 
 Add a department: write `toolkit/departments/<name>.py` with `NAME`, `do`, `verify` and `summary`, register it in `toolkit/departments/__init__.py`, and add it to `toolkit/orchestrator/pipeline.json` after its dependencies. Add a test in `tests/test_pipeline.py`.
 
-Planned, not built: a drafting department that writes full ebook chapters with the Claude API from the research document. It will be an explicit command, never automatic in CI, because it costs money.
+The full spec, decisions and build order are in `docs/project.spec.json`.
+
+Planned, not built: stock b-roll inside Remotion scenes, and a drafting department that writes full ebook chapters with the Claude API from the research document. It will be an explicit command, never automatic in CI, because it costs money.

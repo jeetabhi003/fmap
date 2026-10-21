@@ -1,2 +1,2 @@
-url,account,topic,format,hook_pattern,length_sec,why_it_works
-https://www.instagram.com/reel/EXAMPLE123/,@example_account,price breakdown,talking head with text overlays,opens with a single number on screen,32,Delete this row. Note the pattern only; never download or repost.
+url,account,caption,format,length_sec,notes
+https://www.instagram.com/reel/EXAMPLE123/,@example_account,"Paste the caption here, or leave empty and run --fetch-reels on the laptop",talking head with text overlays,32,Delete this row. Notes on visuals: cuts every 2s; price on screen first

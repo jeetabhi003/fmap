@@ -24,6 +24,20 @@ One orchestrator runs the business as a pipeline: research → verified register
    ```
 5. Read `outputs/report/status.md`. It lists what is done, what needs a person, and what failed.
 
+## Reels on the laptop
+
+```bash
+pip install edge-tts==7.3.1                 # free AI voice
+cd video && npm ci && cd ..                 # Remotion templates
+# reference reels: put links (and captions if you have them) in data/inputs/reels.csv
+python3 toolkit/orchestrator/orchestrator.py run --only references --fetch-reels   # analyse why they work
+python3 toolkit/orchestrator/orchestrator.py run --only video --render             # plan and render MP4s
+```
+
+Renders land in `outputs/video/` with a caption file each. Optional: run MoneyPrinterTurbo locally and set `video.moneyprinterturbo_url` (and `moneyprinterturbo_api_key`) in `toolkit/config.local.json` for a stock-footage version. For OpenMontage, paste `outputs/storyboard/openmontage/<id>.md` into Claude Code inside an OpenMontage clone. Preview templates with `cd video && npm run studio`.
+
+The whole project in one file: [`docs/project.spec.json`](docs/project.spec.json).
+
 ## What is where
 
 | Path | What it is |
@@ -34,6 +48,8 @@ One orchestrator runs the business as a pipeline: research → verified register
 | `toolkit/segments.json` | The three customer segments and their funnel copy |
 | `data/properties.csv` | The curated project register (edited by a person) |
 | `products/` | Ebook outlines, free checklist, email sequences, shortlist service |
+| `video/` | Remotion project that renders reel plans |
+| `docs/project.spec.json` | The whole project, decisions and build order in one JSON spec |
 | `site/` | The generated website (do not edit by hand; edit `toolkit/departments/web.py`) |
 | `docs/strategy/` | Funnel, segments, compliance rules |
 | `tests/` | Tests for every department |

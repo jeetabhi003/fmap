@@ -14,7 +14,7 @@ Statuses:
 Exit code is 1 only when a department failed.
 
 Usage:
-  python3 toolkit/orchestrator/orchestrator.py run [--only NAME ...] [--run-engine]
+  python3 toolkit/orchestrator/orchestrator.py run [--only NAME ...] [--run-engine] [--fetch-reels] [--render]
   python3 toolkit/orchestrator/orchestrator.py status
   python3 toolkit/orchestrator/orchestrator.py list
   python3 toolkit/orchestrator/orchestrator.py match --segment investor [--budget-cr 30]
@@ -142,6 +142,8 @@ def main():
     run_p = sub.add_parser("run", help="run the departments in order")
     run_p.add_argument("--only", nargs="+", metavar="NAME", help="run these departments and what they depend on")
     run_p.add_argument("--run-engine", action="store_true", help="also run the laptop research engine (takes hours)")
+    run_p.add_argument("--fetch-reels", action="store_true", help="fetch reel captions from Instagram (laptop only)")
+    run_p.add_argument("--render", action="store_true", help="render reels with Remotion and ffmpeg (laptop)")
     sub.add_parser("status", help="show the last run")
     sub.add_parser("list", help="list departments and dependencies")
     match_p = sub.add_parser("match", help="shortlist projects for a buyer")
@@ -149,7 +151,7 @@ def main():
     match_p.add_argument("--budget-cr", type=float)
     args = parser.parse_args()
 
-    ctx = Context(options={"run_engine": getattr(args, "run_engine", False)})
+    ctx = Context(options={key: getattr(args, key, False) for key in ("run_engine", "fetch_reels", "render")})
     if args.command == "run":
         return run(ctx, args.only)
     if args.command == "status":

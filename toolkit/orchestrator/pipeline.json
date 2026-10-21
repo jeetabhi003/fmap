@@ -1,16 +1,18 @@
 {
   "description": "Departments run in this order. depends_on must be ok for a department to run. uses is optional input: it is read when that department finished ok, and ignored otherwise.",
   "departments": [
-    {"name": "engine",     "depends_on": [],             "uses": [],                          "output": "outputs/engine"},
-    {"name": "intake",     "depends_on": [],             "uses": ["engine"],                  "output": "outputs/intake"},
-    {"name": "register",   "depends_on": [],             "uses": [],                          "output": "outputs/register"},
-    {"name": "listings",   "depends_on": ["register"],   "uses": [],                          "output": "outputs/listings"},
-    {"name": "references", "depends_on": [],             "uses": [],                          "output": "outputs/references"},
-    {"name": "matching",   "depends_on": ["register"],   "uses": [],                          "output": "outputs/matching"},
-    {"name": "content",    "depends_on": ["register"],   "uses": ["listings", "references"],  "output": "outputs/content"},
-    {"name": "web",        "depends_on": ["matching"],   "uses": [],                          "output": "site"},
-    {"name": "compliance", "depends_on": ["web"],        "uses": ["content"],                 "output": "outputs/compliance"},
-    {"name": "leads",      "depends_on": [],             "uses": [],                          "output": "outputs/leads"},
-    {"name": "launch",     "depends_on": ["content", "compliance"], "uses": [],               "output": "outputs/launch"}
+    {"name": "engine",      "depends_on": [], "uses": [], "output": "outputs/engine"},
+    {"name": "intake",      "depends_on": [], "uses": ["engine"], "output": "outputs/intake"},
+    {"name": "register",    "depends_on": [], "uses": [], "output": "outputs/register"},
+    {"name": "listings",    "depends_on": ["register"], "uses": [], "output": "outputs/listings"},
+    {"name": "references",  "depends_on": [], "uses": [], "output": "outputs/references"},
+    {"name": "matching",    "depends_on": ["register"], "uses": [], "output": "outputs/matching"},
+    {"name": "content",     "depends_on": ["register"], "uses": ["listings", "references"], "output": "outputs/content"},
+    {"name": "storyboard",  "depends_on": ["matching"], "uses": ["references"], "output": "outputs/storyboard"},
+    {"name": "video",       "depends_on": ["storyboard"], "uses": [], "output": "outputs/video"},
+    {"name": "web",         "depends_on": ["matching"], "uses": [], "output": "site"},
+    {"name": "compliance",  "depends_on": ["web"], "uses": ["content"], "output": "outputs/compliance"},
+    {"name": "leads",       "depends_on": [], "uses": [], "output": "outputs/leads"},
+    {"name": "launch",      "depends_on": ["content", "compliance"], "uses": [], "output": "outputs/launch"}
   ]
 }

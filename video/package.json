@@ -1,0 +1,19 @@
+{
+  "name": "fmap-reels",
+  "private": true,
+  "description": "Remotion templates that render reel plans from the storyboard department",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render:sample": "remotion render src/index.ts Reel out/sample.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.532",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.532"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  }
+}

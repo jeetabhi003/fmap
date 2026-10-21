@@ -5,20 +5,21 @@ description: Run, check, or extend the Find Me A Property pipeline (orchestrator
 
 # Find Me A Property pipeline
 
-Read `docs/architecture.md` first.
+Read `docs/project.spec.json` and `docs/architecture.md` first.
 
 ## Run
 - Full run: `python3 toolkit/orchestrator/orchestrator.py run`, then read `outputs/report/status.md`.
 - Shortlist for a buyer: `python3 toolkit/orchestrator/orchestrator.py match --segment <end_user|investor|legacy> --budget-cr <N>`.
 - Tests: `python3 -m unittest discover -s tests`. Run them after every change.
 - Only use `--run-engine` when the user asks: the research engine takes hours.
+- Reels: `run --only references --fetch-reels` (laptop), then `run --only video --render`. Watch renders before calling them done.
 
 ## Rules
 - Never edit `site/` by hand; change `toolkit/departments/web.py` or `toolkit/segments.json` and re-run.
 - Never merge `outputs/intake/candidates.csv` into `data/properties.csv` without the user approving each change.
 - Never commit anything under `data/inputs/`, `outputs/`, `work/`, `data/leads/export.csv` or `toolkit/config.local.json`. The repo is public.
 - Never post, email, or contact anyone. Post kits are drafts for a person.
-- Never download or repost reference reels, or use listing media without rights.
+- Never download or repost reference reels, copy their captions, or use listing or portal media without written permission.
 - No promised returns, "best", "sold out" or fake urgency. The compliance department enforces this; do not weaken its patterns to make a run pass.
 
 ## Add a department
