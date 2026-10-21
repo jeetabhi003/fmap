@@ -1,26 +1,33 @@
-name: Validate property register
+name: Run project orchestrator
 
 on:
   push:
     paths:
+      - "toolkit/**"
       - "data/**"
       - "scripts/**"
-      - ".github/workflows/validate.yml"
+      - "products/**"
+      - "site/**"
+      - ".github/workflows/orchestrator.yml"
   pull_request:
     paths:
+      - "toolkit/**"
       - "data/**"
       - "scripts/**"
+      - "products/**"
+      - "site/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  validate:
+  pipeline:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Check register
-        run: python3 scripts/validate_register.py
+      - name: Run pipeline
+        run: python3 toolkit/orchestrator/orchestrator.py run

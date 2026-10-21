@@ -1,0 +1,5 @@
+data/leads/export.csv
+data/jobs/state.json
+data/inputs/research/*
+!data/inputs/research/README.md
+__pycache__/

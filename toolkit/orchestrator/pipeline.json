@@ -1,0 +1,12 @@
+{
+  "description": "Jobs run in this order. A job runs only when every job in depends_on is ok. Add a job by writing a function in orchestrator.py, registering it in JOBS, and listing it here after its dependencies.",
+  "jobs": [
+    {"name": "research_input", "depends_on": []},
+    {"name": "validate_register", "depends_on": []},
+    {"name": "site_placeholders", "depends_on": []},
+    {"name": "ebook_outlines", "depends_on": []},
+    {"name": "lead_summary", "depends_on": []},
+    {"name": "shortlist_ready", "depends_on": ["validate_register"]},
+    {"name": "ebook_drafts", "depends_on": ["research_input", "ebook_outlines"]}
+  ]
+}
